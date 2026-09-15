@@ -156,37 +156,101 @@ h1 {
   margin: 0;
 }
 
+.year-context {
+  margin-top: 0.6rem !important;
+  font-style: italic;
+  color: var(--text) !important;
+  opacity: 0.85;
+}
+
+.items-count {
+  margin-top: 0.9rem !important;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent) !important;
+  font-weight: 700;
+}
+
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1.4rem;
 }
 
 .item-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 1.1rem;
-  padding: 1.5rem 1.1rem;
+  position: relative;
+  background: #fdfaf3;
+  color: #241d2b;
+  border-radius: 0.4rem;
+  padding: 0.9rem 0.9rem 1.3rem;
   text-align: center;
-  backdrop-filter: blur(6px);
+  box-shadow: 0 14px 26px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.04);
   animation: pop-in 0.5s ease both;
+  transform: rotate(var(--tilt, -1.5deg));
+}
+
+.item-card:nth-child(odd) {
+  --tilt: 1.5deg;
+}
+
+.item-card:nth-child(3n) {
+  --tilt: -2.3deg;
+}
+
+.item-badge {
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #16121f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px -3px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.item-photo {
+  background: linear-gradient(160deg, #efe7d8, #ded2b8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.25rem;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
 }
 
 .item-icon {
-  font-size: 2.6rem;
-  margin-bottom: 0.6rem;
+  font-size: 3.2rem;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
 }
 
 .item-name {
-  margin: 0 0 0.4rem;
-  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
 }
 
 .item-desc {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+  color: #4a4152;
+  font-size: 0.85rem;
   line-height: 1.4;
+}
+
+.item-year {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #8a8091;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 @keyframes pop-in {
