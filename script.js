@@ -488,10 +488,11 @@ function renderYear(year) {
     const card = document.createElement("div");
     card.className = "item-card";
     card.style.animationDelay = `${index * 80}ms`;
+    const illustration = typeof ICONS !== "undefined" && ICONS[item.name];
     card.innerHTML = `
       ${item.isNew ? `<span class="item-badge">Nouveauté ${item.introYear}</span>` : ""}
-      <div class="item-photo">
-        <span class="item-icon">${item.icon}</span>
+      <div class="item-photo ${illustration ? "item-photo--illustrated" : ""}">
+        ${illustration ? illustration : `<span class="item-icon">${item.icon}</span>`}
       </div>
       <h3 class="item-name">${item.name}</h3>
       <p class="item-desc">${item.desc}</p>
