@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Shoot de Nostalgie</title>
+  <meta name="description" content="Choisis une année et redécouvre les objets cultes qui ont marqué cette époque." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📼</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="grain"></div>
+
+  <header class="hero">
+    <p class="eyebrow">✨ Machine à remonter le temps ✨</p>
+    <h1>Shoot de <span class="highlight">Nostalgie</span></h1>
+    <p class="subtitle">Choisis une année, on t'envoie direct dans son époque.</p>
+
+    <div class="year-picker">
+      <button id="yearMinus" class="year-btn" aria-label="Année précédente">−</button>
+      <div class="year-display">
+        <span id="yearValue">1998</span>
+      </div>
+      <button id="yearPlus" class="year-btn" aria-label="Année suivante">+</button>
+    </div>
+
+    <input type="range" id="yearSlider" min="1950" max="2026" value="1998" step="1" />
+
+    <button id="goBtn" class="go-btn">🚀 Voir mon shoot de nostalgie</button>
+  </header>
+
+  <main id="result" class="result" hidden>
+    <div class="result-header">
+      <h2 id="decadeTitle">Les années 90</h2>
+      <p id="decadeTagline">L'époque des pogs, du Game Boy et des cassettes audio.</p>
+    </div>
+    <div id="itemsGrid" class="items-grid"></div>
+  </main>
+
+  <footer class="footer">
+    <p>Fait avec 💾 et beaucoup de nostalgie.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
