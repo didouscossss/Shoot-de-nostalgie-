@@ -289,16 +289,8 @@ main {
 }
 
 .card-back {
-  background: linear-gradient(155deg, #1a1030, #3a0f4a 60%, #12042a);
+  background: #0a0a12 url("cards/card-back.webp") center / cover no-repeat;
   border: 2px solid rgba(255, 255, 255, 0.15);
-}
-
-.card-back::after {
-  content: "VI";
-  font-size: 2.6rem;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.18);
-  letter-spacing: 0.1em;
 }
 
 /* --- Montée en tension avant le flip : plus la carte est rare, plus la
