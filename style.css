@@ -156,25 +156,27 @@ main {
 .booster-pack {
   width: 220px;
   height: 330px;
-  border-radius: 1rem;
-  background: #0a0a12 url("cards/booster-pack.webp") center / contain no-repeat;
-  box-shadow: 0 25px 50px -15px rgba(255, 46, 151, 0.45);
+  background: url("cards/booster-pack.webp") center / contain no-repeat;
+  filter: drop-shadow(0 20px 35px rgba(255, 46, 151, 0.4));
   cursor: pointer;
-  transition: transform 0.2s ease;
-  animation: float 3.5s ease-in-out infinite;
+  transition: filter 0.2s ease;
+  animation: booster-float 4.5s ease-in-out infinite;
 }
 
 .booster-pack:hover {
-  transform: translateY(-4px) scale(1.02);
+  filter: drop-shadow(0 26px 45px rgba(0, 229, 255, 0.5)) brightness(1.08);
 }
 
 .booster-pack.opening {
   animation: shake 0.4s ease;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+@keyframes booster-float {
+  0%   { transform: translateY(0) rotate(-2.5deg); }
+  25%  { transform: translateY(-9px) rotate(1deg); }
+  50%  { transform: translateY(-16px) rotate(3deg) scale(1.02); }
+  75%  { transform: translateY(-8px) rotate(0.5deg); }
+  100% { transform: translateY(0) rotate(-2.5deg); }
 }
 
 @keyframes shake {
