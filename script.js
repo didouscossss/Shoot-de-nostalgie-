@@ -27,6 +27,45 @@ function rarityOf(key) {
   return RARITY_BY_KEY[key] || RARITY_CONFIG[0];
 }
 
+// Raretés qui reçoivent l'effet holographique 3D (Ultra Rare et au-dessus).
+const HOLO_RARITIES = new Set(["ultra", "epique", "legendaire", "secrete"]);
+
+// --- Effet holographique 3D (tilt + reflet qui suit la souris) ---------
+
+function attachHoloTilt(el, maxTilt) {
+  if (!el || el.dataset.holoBound) return;
+  el.dataset.holoBound = "1";
+  el.classList.add("holo");
+
+  const setFromPoint = (clientX, clientY) => {
+    const rect = el.getBoundingClientRect();
+    const px = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+    const py = Math.min(Math.max((clientY - rect.top) / rect.height, 0), 1);
+    el.style.setProperty("--holo-x", `${px * 100}%`);
+    el.style.setProperty("--holo-y", `${py * 100}%`);
+    el.style.setProperty("--tilt-x", `${(0.5 - py) * 2 * maxTilt}deg`);
+    el.style.setProperty("--tilt-y", `${(px - 0.5) * 2 * maxTilt}deg`);
+    el.classList.add("holo-active");
+  };
+
+  const reset = () => {
+    el.classList.remove("holo-active");
+    el.style.setProperty("--tilt-x", "0deg");
+    el.style.setProperty("--tilt-y", "0deg");
+  };
+
+  el.addEventListener("mousemove", (e) => setFromPoint(e.clientX, e.clientY));
+  el.addEventListener("mouseleave", reset);
+  el.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.touches[0]) setFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+    },
+    { passive: true }
+  );
+  el.addEventListener("touchend", reset);
+}
+
 // Effets de révélation : l'intensité (nombre de particules, vitesse de la
 // montée en tension avant le flip, rayons, flash d'écran, tremblement)
 // grimpe avec la rareté pour un effet "wahou" de plus en plus fort.
@@ -260,7 +299,17 @@ function startBoosterOpening() {
         setTimeout(() => cardEl.classList.add("charging"), 500 + i * 120);
       }
 
-      cardEl.onclick = () => revealCard(slot, cardEl, card);
+      if (HOLO_RARITIES.has(card.rarity)) {
+        attachHoloTilt(cardEl.querySelector(".card-front"), 14);
+      }
+
+      cardEl.onclick = () => {
+        if (cardEl.classList.contains("flipped")) {
+          openLightbox(card);
+        } else {
+          revealCard(slot, cardEl, card);
+        }
+      };
     });
   }, 400);
 }
@@ -272,6 +321,41 @@ function revealCard(slot, cardEl, card) {
   cardEl.dataset.fxDone = "1";
   setTimeout(() => triggerRarityFX(slot, card.rarity), 300);
 }
+
+// --- Vue plein écran (lightbox) -----------------------------------------
+
+const lightbox = document.getElementById("lightbox");
+const lightboxCardEl = document.getElementById("lightboxCard");
+const lightboxBackdrop = document.getElementById("lightboxBackdrop");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function openLightbox(card) {
+  const rarity = rarityOf(card.rarity);
+  lightboxCardEl.innerHTML = `
+    <div class="lightbox-card rarity-${card.rarity}" style="--rarity-color:${rarity.color}; --rarity-glow:${rarity.color}88;">
+      ${card.image ? `<img src="${card.image}" alt="${card.name}" />` : ""}
+    </div>
+    <div class="lightbox-caption">
+      <p class="lb-name">#${card.number} — ${card.name}</p>
+      <p class="lb-meta">${card.category || ""} · ${rarity.label}</p>
+    </div>
+  `;
+  if (HOLO_RARITIES.has(card.rarity)) {
+    attachHoloTilt(lightboxCardEl.querySelector(".lightbox-card"), 16);
+  }
+  lightbox.hidden = false;
+}
+
+function closeLightbox() {
+  lightbox.hidden = true;
+  lightboxCardEl.innerHTML = "";
+}
+
+lightboxBackdrop.addEventListener("click", closeLightbox);
+lightboxClose.addEventListener("click", closeLightbox);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !lightbox.hidden) closeLightbox();
+});
 
 openBtn.addEventListener("click", startBoosterOpening);
 boosterPack.addEventListener("click", startBoosterOpening);
@@ -347,7 +431,7 @@ function renderCollection() {
       const isOwned = count > 0;
       const rarity = rarityOf(card.rarity);
       return `
-        <div class="coll-card ${isOwned ? "" : "locked"}" style="--rarity-color:${rarity.color}; --rarity-glow:${rarity.color}55;">
+        <div class="coll-card ${isOwned ? "" : "locked"}" data-id="${card.id}" style="--rarity-color:${rarity.color}; --rarity-glow:${rarity.color}55;">
           <div class="coll-card-visual">${isOwned ? cardVisualHTML(card) : "❔"}</div>
           <p class="coll-card-number">#${card.number}</p>
           <p class="coll-card-name">${isOwned ? card.name : "???"}</p>
@@ -356,7 +440,20 @@ function renderCollection() {
       `;
     })
     .join("");
+
+  sorted.forEach((card) => {
+    if (!HOLO_RARITIES.has(card.rarity) || !(collection[card.id] > 0)) return;
+    const visualEl = collectionGrid.querySelector(`.coll-card[data-id="${card.id}"] .coll-card-visual`);
+    if (visualEl) attachHoloTilt(visualEl, 12);
+  });
 }
+
+collectionGrid.addEventListener("click", (e) => {
+  const el = e.target.closest(".coll-card:not(.locked)");
+  if (!el) return;
+  const card = CARDS.find((c) => c.id === el.dataset.id);
+  if (card) openLightbox(card);
+});
 
 // --- Init ---------------------------------------------------------------
 

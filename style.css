@@ -123,9 +123,17 @@ body {
 main {
   position: relative;
   z-index: 1;
+  padding: 1rem 1.25rem 4rem;
+}
+
+#tab-boosters {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 1rem 1.25rem 4rem;
+}
+
+#tab-collection {
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .tab-panel {
@@ -587,17 +595,25 @@ body.shake {
 
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 0.7rem;
+  perspective: 900px;
 }
 
 .coll-card {
-  border-radius: 0.8rem;
+  position: relative;
+  border-radius: 0.7rem;
   border: 2px solid var(--rarity-color, var(--card-border));
   background: #14101f;
-  padding: 0.7rem;
+  padding: 0.5rem;
   text-align: center;
   box-shadow: 0 0 18px -6px var(--rarity-glow, transparent);
+  transition: transform 0.15s ease-out;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.coll-card:not(.locked) {
+  cursor: pointer;
 }
 
 .coll-card.locked {
@@ -607,6 +623,7 @@ body.shake {
 }
 
 .coll-card-visual {
+  position: relative;
   aspect-ratio: 5 / 7;
   border-radius: 0.5rem;
   background: linear-gradient(160deg, #241a38, #150e24);
@@ -642,6 +659,69 @@ body.shake {
   color: var(--muted);
 }
 
+/* ---------------------------------------------------------------------
+   Effet holographique 3D (Ultra Rare et au-dessus) : un halo arc-en-ciel
+   qui suit la souris, plus une lente animation de scintillement quand on
+   n'interagit pas (utile aussi sur mobile, sans souris).
+--------------------------------------------------------------------- */
+.holo {
+  transform-style: preserve-3d;
+}
+
+.holo::before,
+.holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.holo::before {
+  background: linear-gradient(
+    115deg,
+    transparent 15%,
+    rgba(255, 255, 255, 0.55) 32%,
+    rgba(255, 46, 151, 0.45) 40%,
+    rgba(0, 229, 255, 0.45) 48%,
+    rgba(245, 166, 35, 0.45) 56%,
+    rgba(168, 85, 247, 0.45) 64%,
+    transparent 80%
+  );
+  background-size: 220% 220%;
+  background-position: 30% 30%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.65;
+  animation: holo-idle 6s ease-in-out infinite;
+}
+
+.holo::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35), transparent 60%);
+  mix-blend-mode: overlay;
+  opacity: 0.4;
+}
+
+.holo.holo-active::before {
+  animation: none;
+  background-position: var(--holo-x, 50%) var(--holo-y, 50%);
+}
+
+.holo.holo-active::after {
+  background: radial-gradient(circle at var(--holo-x, 50%) var(--holo-y, 50%), rgba(255, 255, 255, 0.55), transparent 55%);
+  opacity: 0.55;
+}
+
+@keyframes holo-idle {
+  0%, 100% { background-position: 15% 15%; }
+  50% { background-position: 85% 85%; }
+}
+
+.card-front.holo {
+  transform: rotateY(180deg) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.12s ease-out;
+}
+
 .footer {
   position: relative;
   z-index: 1;
@@ -665,4 +745,92 @@ body.shake {
     max-width: 190px;
     max-height: 266px;
   }
+}
+
+/* --- Vue plein écran (lightbox) --- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 3, 10, 0.88);
+  backdrop-filter: blur(6px);
+}
+
+.lightbox-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  perspective: 1400px;
+  animation: lightbox-pop 0.25s ease-out both;
+}
+
+@keyframes lightbox-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -2.75rem;
+  right: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.lightbox-card {
+  position: relative;
+  width: min(78vw, 380px);
+  aspect-ratio: 5 / 7;
+  border-radius: 1.1rem;
+  overflow: hidden;
+  border: 4px solid var(--rarity-color, var(--card-border));
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.8), 0 0 50px 4px var(--rarity-glow, transparent);
+  background: #14101f;
+  transition: transform 0.12s ease-out;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.lightbox-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lightbox-card.rarity-secrete {
+  border-image: linear-gradient(135deg, #ff2e97, #f5a623, #00e5ff, #a855f7, #ff2e97) 1;
+  animation: holo-spin 3s linear infinite;
+}
+
+.lightbox-caption {
+  text-align: center;
+}
+
+.lightbox-caption .lb-name {
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.lightbox-caption .lb-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
 }
