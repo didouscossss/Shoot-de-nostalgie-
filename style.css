@@ -241,6 +241,7 @@ main {
 }
 
 .card-slot {
+  position: relative;
   width: 190px;
 }
 
@@ -292,6 +293,102 @@ main {
   letter-spacing: 0.1em;
 }
 
+/* --- Montée en tension avant le flip : plus la carte est rare, plus la
+   pulsation est rapide et intense (couleur héritée de --rarity-glow posé
+   sur .card par le JS avant même que le flip ne révèle la rareté). --- */
+.card.charging .card-back {
+  animation: charge-pulse var(--pulse-speed, 1.4s) ease-in-out infinite;
+}
+
+@keyframes charge-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 0 var(--rarity-glow, transparent), 0 0 0 0 var(--rarity-glow, transparent); }
+  50% { box-shadow: inset 0 0 20px 4px var(--rarity-glow, transparent), 0 0 var(--pulse-size, 18px) 4px var(--rarity-glow, transparent); }
+}
+
+/* --- Effets de révélation, par palier de rareté --- */
+.fx-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 480px;
+  height: 480px;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg, var(--ray-color, #fff) 8deg, transparent 18deg,
+    transparent 38deg, var(--ray-color, #fff) 46deg, transparent 56deg,
+    transparent 76deg, var(--ray-color, #fff) 84deg, transparent 94deg,
+    transparent 114deg, var(--ray-color, #fff) 122deg, transparent 132deg,
+    transparent 152deg, var(--ray-color, #fff) 160deg, transparent 170deg,
+    transparent 190deg, var(--ray-color, #fff) 198deg, transparent 208deg,
+    transparent 228deg, var(--ray-color, #fff) 236deg, transparent 246deg,
+    transparent 266deg, var(--ray-color, #fff) 274deg, transparent 284deg,
+    transparent 304deg, var(--ray-color, #fff) 312deg, transparent 322deg,
+    transparent 342deg, var(--ray-color, #fff) 350deg, transparent 360deg
+  );
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+  animation: ray-burst 1.1s ease-out forwards;
+}
+
+@keyframes ray-burst {
+  from { transform: translate(-50%, -50%) rotate(0deg) scale(0.4); opacity: 0.9; }
+  to { transform: translate(-50%, -50%) rotate(140deg) scale(1.15); opacity: 0; }
+}
+
+.fx-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--p-size, 8px);
+  height: var(--p-size, 8px);
+  margin: calc(var(--p-size, 8px) / -2);
+  border-radius: 50%;
+  background: var(--p-color, #fff);
+  box-shadow: 0 0 6px 1px var(--p-color, #fff);
+  pointer-events: none;
+  z-index: 2;
+  animation: particle-fly 1s ease-out forwards;
+}
+
+@keyframes particle-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  background: var(--flash-color, #fff);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.screen-flash.active {
+  animation: flash-pop 0.6s ease-out forwards;
+}
+
+@keyframes flash-pop {
+  0% { opacity: 0; }
+  12% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-7px, 5px); }
+  40% { transform: translate(7px, -5px); }
+  60% { transform: translate(-5px, -7px); }
+  80% { transform: translate(5px, 7px); }
+}
+
+body.shake {
+  animation: screen-shake 0.45s ease-in-out;
+}
+
 .card-front {
   transform: rotateY(180deg);
   background: #14101f;
@@ -302,14 +399,29 @@ main {
   text-align: center;
 }
 
+/* Lueur ambiante permanente une fois la carte posée, de plus en plus
+   marquée à mesure que la rareté grimpe. */
+.card-front.rarity-epique {
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+
+.card-front.rarity-legendaire {
+  animation: glow-pulse 1.8s ease-in-out infinite;
+}
+
 .card-front.rarity-secrete {
   border-image: linear-gradient(135deg, #ff2e97, #f5a623, #00e5ff, #a855f7, #ff2e97) 1;
-  animation: holo-spin 3s linear infinite;
+  animation: holo-spin 3s linear infinite, glow-pulse 1.3s ease-in-out infinite;
 }
 
 @keyframes holo-spin {
   0% { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 18px 34px -12px rgba(0, 0, 0, 0.6), 0 0 16px -2px var(--rarity-glow, transparent); }
+  50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 18px 34px -12px rgba(0, 0, 0, 0.6), 0 0 42px 8px var(--rarity-glow, transparent); }
 }
 
 .card-number {

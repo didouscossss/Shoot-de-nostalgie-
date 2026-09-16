@@ -27,6 +27,68 @@ function rarityOf(key) {
   return RARITY_BY_KEY[key] || RARITY_CONFIG[0];
 }
 
+// Effets de révélation : l'intensité (nombre de particules, vitesse de la
+// montée en tension avant le flip, rayons, flash d'écran, tremblement)
+// grimpe avec la rareté pour un effet "wahou" de plus en plus fort.
+const RARITY_FX = {
+  normale: { particles: 0, rays: false, flash: false, shake: false, pulseSpeed: 0, colors: ["#c7ccd1"] },
+  rare: { particles: 8, rays: false, flash: false, shake: false, pulseSpeed: 1.5, pulseSize: "16px", colors: ["#3b82f6", "#93c5fd"] },
+  ultra: { particles: 14, rays: false, flash: false, shake: false, pulseSpeed: 1.1, pulseSize: "20px", colors: ["#14b8a6", "#5eead4"] },
+  epique: { particles: 20, rays: true, flash: false, shake: false, pulseSpeed: 0.85, pulseSize: "26px", colors: ["#a855f7", "#d8b4fe", "#f0abfc"] },
+  legendaire: { particles: 30, rays: true, flash: true, shake: true, pulseSpeed: 0.6, pulseSize: "32px", colors: ["#f5a623", "#ffd76a", "#fff3c4"] },
+  secrete: { particles: 44, rays: true, flash: true, shake: true, pulseSpeed: 0.4, pulseSize: "40px", colors: ["#ff2e97", "#00e5ff", "#a855f7", "#f5a623", "#7bed9f"] },
+};
+
+function fxOf(key) {
+  return RARITY_FX[key] || RARITY_FX.normale;
+}
+
+function spawnParticles(container, count, colors) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement("span");
+    p.className = "fx-particle";
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 55 + Math.random() * 100;
+    p.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+    p.style.setProperty("--dy", `${Math.sin(angle) * dist}px`);
+    p.style.setProperty("--p-color", colors[i % colors.length]);
+    p.style.setProperty("--p-size", `${5 + Math.random() * 6}px`);
+    p.style.animationDelay = `${Math.random() * 0.2}s`;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1400);
+  }
+}
+
+function triggerRarityFX(slotEl, rarityKey) {
+  const fx = fxOf(rarityKey);
+
+  if (fx.rays) {
+    const ray = document.createElement("div");
+    ray.className = "fx-rays";
+    ray.style.setProperty("--ray-color", fx.colors[0]);
+    slotEl.appendChild(ray);
+    setTimeout(() => ray.remove(), 1300);
+  }
+
+  if (fx.particles > 0) {
+    spawnParticles(slotEl, fx.particles, fx.colors);
+  }
+
+  if (fx.flash) {
+    const flash = document.getElementById("screenFlash");
+    flash.style.setProperty("--flash-color", fx.colors[0]);
+    flash.classList.remove("active");
+    void flash.offsetWidth;
+    flash.classList.add("active");
+  }
+
+  if (fx.shake) {
+    document.body.classList.remove("shake");
+    void document.body.offsetWidth;
+    document.body.classList.add("shake");
+  }
+}
+
 // --- Tirage pondéré ---------------------------------------------------
 
 function pickWeightedRarity() {
@@ -175,24 +237,50 @@ function startBoosterOpening() {
     const slots = cardsReveal.querySelectorAll(".card-slot");
     slots.forEach((slot, i) => {
       const card = currentDraw[i];
+      const rarity = rarityOf(card.rarity);
+      const fx = fxOf(card.rarity);
       const cardEl = slot.querySelector(".card");
+
       slot.classList.remove("dealt");
-      cardEl.classList.remove("flipped");
+      cardEl.classList.remove("flipped", "charging");
+      cardEl.dataset.fxDone = "";
       cardEl.querySelector(".card-front").outerHTML = cardFrontHTML(card, currentlyNew[i]);
       void slot.offsetWidth;
       slot.classList.add("dealt");
       slot.style.animationDelay = `${i * 120}ms`;
 
-      cardEl.onclick = () => cardEl.classList.toggle("flipped");
+      // La couleur/lueur de rareté est posée sur .card (donc héritée par
+      // .card-back) pour pouvoir faire "chauffer" le dos de la carte avant
+      // même qu'elle soit retournée.
+      cardEl.style.setProperty("--rarity-color", rarity.color);
+      cardEl.style.setProperty("--rarity-glow", `${rarity.color}aa`);
+      if (fx.pulseSpeed > 0) {
+        cardEl.style.setProperty("--pulse-speed", `${fx.pulseSpeed}s`);
+        cardEl.style.setProperty("--pulse-size", fx.pulseSize);
+        setTimeout(() => cardEl.classList.add("charging"), 500 + i * 120);
+      }
+
+      cardEl.onclick = () => revealCard(slot, cardEl, card);
     });
   }, 400);
+}
+
+function revealCard(slot, cardEl, card) {
+  cardEl.classList.add("flipped");
+  cardEl.classList.remove("charging");
+  if (cardEl.dataset.fxDone) return;
+  cardEl.dataset.fxDone = "1";
+  setTimeout(() => triggerRarityFX(slot, card.rarity), 300);
 }
 
 openBtn.addEventListener("click", startBoosterOpening);
 boosterPack.addEventListener("click", startBoosterOpening);
 
 revealAllBtn.addEventListener("click", () => {
-  cardsReveal.querySelectorAll(".card").forEach((cardEl) => cardEl.classList.add("flipped"));
+  cardsReveal.querySelectorAll(".card-slot").forEach((slot, i) => {
+    const cardEl = slot.querySelector(".card");
+    revealCard(slot, cardEl, currentDraw[i]);
+  });
   revealAllBtn.hidden = true;
   againBtn.hidden = false;
 });
