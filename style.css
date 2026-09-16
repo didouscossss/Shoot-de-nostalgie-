@@ -154,16 +154,11 @@ main {
 }
 
 .booster-pack {
-  width: 200px;
-  height: 280px;
+  width: 220px;
+  height: 330px;
   border-radius: 1rem;
-  background: linear-gradient(155deg, #1a1030, #3a0f4a 45%, #ff2e97 130%);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 25px 50px -15px rgba(255, 46, 151, 0.45), inset 0 0 40px rgba(0, 229, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2rem;
+  background: #0a0a12 url("cards/booster-pack.webp") center / contain no-repeat;
+  box-shadow: 0 25px 50px -15px rgba(255, 46, 151, 0.45);
   cursor: pointer;
   transition: transform 0.2s ease;
   animation: float 3.5s ease-in-out infinite;
@@ -175,28 +170,6 @@ main {
 
 .booster-pack.opening {
   animation: shake 0.4s ease;
-}
-
-.booster-pack-face {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.booster-pack-title {
-  font-size: 1.6rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #fff;
-  text-shadow: 0 0 18px rgba(0, 229, 255, 0.8);
-}
-
-.booster-pack-sub {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 @keyframes float {
