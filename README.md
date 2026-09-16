@@ -1,9 +1,8 @@
-# Shoot de Nostalgie 📼
+# GTA VI Boosters 🎴
 
-Choisis une année sur le curseur, et l'application t'affiche les objets et
-tendances cultes qui ont marqué cette époque (des années 50 aux années 2020) :
-pogs et cartes Pokémon des années 90, Minitel et Walkman des années 80,
-Tamagotchi, MSN, fidget spinners...
+Projet de fan non officiel (sans lien avec Rockstar Games ni Take-Two
+Interactive). Ouvre des boosters de 3 cartes originales et complète ta
+collection. Plus une carte est rare, plus elle est dure à obtenir.
 
 ## Utilisation
 
@@ -24,12 +23,49 @@ npx serve .
 
 ## Structure
 
-- `index.html` — structure de la page (sélecteur d'année + zone de résultats).
-- `style.css` — thème visuel, avec une palette de couleurs différente par décennie.
-- `script.js` — données des décennies (objets cultes) et logique d'affichage.
+- `index.html` — structure de la page (onglets Boosters / Collection).
+- `style.css` — thème visuel (cadre coloré selon la rareté, animations d'ouverture et de flip).
+- `cards-data.js` — la liste des cartes (`CARDS`). **C'est ce fichier à remplacer/compléter avec la vraie liste.**
+- `script.js` — moteur du jeu : tirage pondéré par rareté, collection (localStorage), rendu.
 
-## Ajouter/modifier des objets cultes
+## Format d'une carte (`cards-data.js`)
 
-Toutes les données sont dans le tableau `DECADES` en haut de `script.js`.
-Chaque décennie a une plage d'années (`start`/`end`), un nom, une accroche,
-un thème CSS et une liste d'`items` (`icon`, `name`, `desc`).
+```js
+{
+  id: "c013",              // identifiant unique et stable (ne change jamais)
+  number: "013",           // numéro affiché sur la carte
+  name: "Franklin Diaz",   // nom de la carte
+  category: "Personnage",  // Personnage / Véhicule / Lieu / Environnement / Autre
+  rarity: "legendaire",    // normale / rare / ultra / epique / legendaire / secrete
+  tagline: "...",          // courte accroche
+  image: "cards/013.jpg",  // optionnel : chemin vers le visuel de la carte
+}
+```
+
+Si `image` est absent, une pastille de repli s'affiche à la place (pas de
+photo/artwork officiel du jeu utilisé).
+
+## Réglage des probabilités de tirage
+
+Dans `script.js`, le tableau `RARITY_CONFIG` définit le poids de chaque
+rareté (plus le poids est petit, plus elle est rare) :
+
+```js
+const RARITY_CONFIG = [
+  { key: "normale",    label: "Normale",     weight: 55,  color: "#9aa5b1" },
+  { key: "rare",       label: "Rare",        weight: 27,  color: "#3b82f6" },
+  { key: "ultra",      label: "Ultra Rare",  weight: 10,  color: "#14b8a6" },
+  { key: "epique",     label: "Épique",      weight: 5.5, color: "#a855f7" },
+  { key: "legendaire", label: "Légendaire",  weight: 2,   color: "#f5a623" },
+  { key: "secrete",    label: "Secrète",     weight: 0.5, color: "#ff2e97" },
+];
+```
+
+Chaque booster tire 3 cartes indépendamment (une carte peut donc, en
+théorie, sortir plusieurs fois dans le même booster).
+
+## Collection
+
+La collection (cartes obtenues + nombre d'exemplaires) est sauvegardée dans
+le `localStorage` du navigateur : propre à chaque appareil/navigateur, sans
+compte ni serveur.

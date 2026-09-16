@@ -3,55 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Shoot de Nostalgie</title>
-  <meta name="description" content="Choisis une année et redécouvre les objets cultes qui ont marqué cette époque." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📼</text></svg>" />
+  <title>GTA VI Boosters</title>
+  <meta name="description" content="Ouvre des boosters de 3 cartes et complète ta collection. Fan-made, non affilié à Rockstar Games." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="grain"></div>
 
-  <header class="hero">
-    <p class="eyebrow">✨ Machine à remonter le temps ✨</p>
-    <h1>Shoot de <span class="highlight">Nostalgie</span></h1>
-    <p class="subtitle">Choisis une année, on t'envoie direct dans son époque.</p>
-
-    <div class="year-picker">
-      <button id="yearMinus" class="year-btn" aria-label="Année précédente">−</button>
-      <div class="year-display">
-        <span id="yearValue">1998</span>
-      </div>
-      <button id="yearPlus" class="year-btn" aria-label="Année suivante">+</button>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge">VI</span>
+      <span class="brand-name">Booster<span class="highlight">Club</span></span>
     </div>
-
-    <input type="range" id="yearSlider" min="1950" max="2026" value="1998" step="1" />
-
-    <button id="goBtn" class="go-btn">🚀 Voir mon shoot de nostalgie</button>
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="boosters" role="tab" aria-selected="true">🎁 Boosters</button>
+      <button class="tab-btn" data-tab="collection" role="tab" aria-selected="false">📖 Collection</button>
+    </nav>
   </header>
 
-  <main id="result" class="result" hidden>
-    <div class="result-header">
-      <h2 id="decadeTitle">Les années 90</h2>
-      <p id="decadeTagline">L'époque des pogs, du Game Boy et des cassettes audio.</p>
-    </div>
+  <p class="disclaimer">Projet de fan non officiel, sans lien avec Rockstar Games ni Take-Two Interactive. Cartes et visuels 100% originaux.</p>
 
-    <section id="eventsSection" class="events-section" hidden>
-      <h3 class="section-title">📰 Ce qui a aussi marqué cette année</h3>
-      <ul id="eventsList" class="events-list"></ul>
+  <main>
+    <section id="tab-boosters" class="tab-panel active">
+      <div class="booster-stage">
+        <div id="boosterPack" class="booster-pack">
+          <div class="booster-pack-face">
+            <span class="booster-pack-title">BOOSTER</span>
+            <span class="booster-pack-sub">3 cartes</span>
+          </div>
+        </div>
+
+        <button id="openBtn" class="open-btn">Ouvrir un booster</button>
+        <p id="pityHint" class="pity-hint"></p>
+
+        <div id="cardsReveal" class="cards-reveal" hidden>
+          <div class="card-slot" data-slot="0"><div class="card"><div class="card-back"></div><div class="card-front"></div></div></div>
+          <div class="card-slot" data-slot="1"><div class="card"><div class="card-back"></div><div class="card-front"></div></div></div>
+          <div class="card-slot" data-slot="2"><div class="card"><div class="card-back"></div><div class="card-front"></div></div></div>
+        </div>
+
+        <button id="revealAllBtn" class="reveal-all-btn" hidden>Tout révéler</button>
+        <button id="againBtn" class="again-btn" hidden>Ouvrir un autre booster</button>
+      </div>
     </section>
 
-    <section class="objects-section">
-      <h3 class="section-title">🎁 Les objets et tendances cultes</h3>
-      <p id="itemsCount" class="items-count"></p>
-      <div id="itemsGrid" class="items-grid"></div>
+    <section id="tab-collection" class="tab-panel">
+      <div class="collection-header">
+        <h2>Ma collection</h2>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+          <p id="progressText" class="progress-text">0 / 0 cartes découvertes</p>
+        </div>
+        <div id="rarityFilters" class="rarity-filters"></div>
+      </div>
+      <div id="collectionGrid" class="collection-grid"></div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Fait avec 💾 et beaucoup de nostalgie.</p>
+    <p>Fait par un fan, pour des fans. 🎮</p>
   </footer>
 
-  <script src="icons.js"></script>
+  <script src="cards-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
