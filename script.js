@@ -94,6 +94,16 @@ function cardVisualHTML(card) {
 
 function cardFrontHTML(card, isNew) {
   const rarity = rarityOf(card.rarity);
+  if (card.image) {
+    // Le visuel contient déjà le numéro, le nom et la rareté : on l'affiche
+    // en plein cadre, sans le redoubler avec du texte par-dessus.
+    return `
+      <div class="card-front has-image rarity-${card.rarity}" style="--rarity-color:${rarity.color}; --rarity-glow:${rarity.color}66;">
+        ${isNew ? `<span class="new-pill">Nouveau</span>` : ""}
+        <img class="card-full-image" src="${card.image}" alt="${card.name}" loading="lazy" />
+      </div>
+    `;
+  }
   return `
     <div class="card-front rarity-${card.rarity}" style="--rarity-color:${rarity.color}; --rarity-glow:${rarity.color}66;">
       ${isNew ? `<span class="new-pill">Nouveau</span>` : ""}
