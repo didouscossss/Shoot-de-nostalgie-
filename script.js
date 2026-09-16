@@ -157,9 +157,20 @@ function openBooster() {
   return [drawOneCard(), drawOneCard(), drawOneCard()];
 }
 
-// --- Collection (localStorage) ----------------------------------------
+// --- Collection ----------------------------------------------------------
+//
+// Mode compte (Account.enabled === true et utilisateur connecté) : la
+// collection vit dans Firestore (Account.data.collection), synchronisée
+// entre appareils. Sinon (mode invité) : localStorage, comme avant.
+
+function usingCloudAccount() {
+  return Account.enabled && Account.user && Account.data;
+}
 
 function loadCollection() {
+  if (usingCloudAccount()) {
+    return Account.data.collection || {};
+  }
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
   } catch {
@@ -168,6 +179,10 @@ function loadCollection() {
 }
 
 function saveCollection(collection) {
+  if (usingCloudAccount()) {
+    Account.saveData({ collection });
+    return;
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
   } catch {
@@ -176,7 +191,7 @@ function saveCollection(collection) {
 }
 
 function addToCollection(card) {
-  const collection = loadCollection();
+  const collection = { ...loadCollection() };
   const wasNew = !collection[card.id];
   collection[card.id] = (collection[card.id] || 0) + 1;
   saveCollection(collection);
@@ -261,10 +276,22 @@ function resetBoosterUI() {
 }
 
 function startBoosterOpening() {
+  if (Account.enabled && !Account.user) {
+    openAuthModal();
+    return;
+  }
+  if (usingCloudAccount() && (Account.data.boosterCount || 0) <= 0) {
+    return;
+  }
+
   openBtn.disabled = true;
   boosterPack.classList.add("opening");
 
   setTimeout(() => {
+    if (usingCloudAccount()) {
+      Account.saveData({ boosterCount: Account.data.boosterCount - 1 });
+    }
+
     currentDraw = openBooster();
     currentlyNew = currentDraw.map((card) => addToCollection(card));
 
@@ -454,6 +481,170 @@ collectionGrid.addEventListener("click", (e) => {
   const card = CARDS.find((c) => c.id === el.dataset.id);
   if (card) openLightbox(card);
 });
+
+// --- Compte, boutique et récompense hebdomadaire -------------------------
+
+const accountBar = document.getElementById("accountBar");
+const loginBtn = document.getElementById("loginBtn");
+const boosterBalanceEl = document.getElementById("boosterBalance");
+const coinsBalanceEl = document.getElementById("coinsBalance");
+const weeklyBanner = document.getElementById("weeklyBanner");
+const claimWeeklyBtn = document.getElementById("claimWeeklyBtn");
+const shopTabBtn = document.querySelector('.tab-btn[data-tab="shop"]');
+
+const authModal = document.getElementById("authModal");
+const authBackdrop = document.getElementById("authBackdrop");
+const authClose = document.getElementById("authClose");
+const authForm = document.getElementById("authForm");
+const authTitle = document.getElementById("authTitle");
+const authError = document.getElementById("authError");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authSubmit = document.getElementById("authSubmit");
+const authSwitchText = document.getElementById("authSwitchText");
+const authSwitchBtn = document.getElementById("authSwitchBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+let authMode = "login";
+
+function openAuthModal() {
+  if (Account.user) {
+    authForm.hidden = true;
+    authSwitchText.hidden = true;
+    authSwitchBtn.hidden = true;
+    logoutBtn.hidden = false;
+    authTitle.textContent = Account.user.email;
+  } else {
+    authMode = "login";
+    updateAuthFormMode();
+    authForm.hidden = false;
+    logoutBtn.hidden = true;
+  }
+  authError.hidden = true;
+  authModal.hidden = false;
+}
+
+function closeAuthModal() {
+  authModal.hidden = true;
+}
+
+function updateAuthFormMode() {
+  const isLogin = authMode === "login";
+  authTitle.textContent = isLogin ? "Connexion" : "Créer un compte";
+  authSubmit.textContent = isLogin ? "Se connecter" : "Créer mon compte";
+  authSwitchText.textContent = isLogin ? "Pas encore de compte ?" : "Déjà un compte ?";
+  authSwitchBtn.textContent = isLogin ? "Créer un compte" : "Se connecter";
+}
+
+if (Account.enabled) {
+  loginBtn.addEventListener("click", openAuthModal);
+  authBackdrop.addEventListener("click", closeAuthModal);
+  authClose.addEventListener("click", closeAuthModal);
+
+  authSwitchBtn.addEventListener("click", () => {
+    authMode = authMode === "login" ? "signup" : "login";
+    updateAuthFormMode();
+    authError.hidden = true;
+  });
+
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    authError.hidden = true;
+    authSubmit.disabled = true;
+    try {
+      if (authMode === "login") {
+        await Account.logIn(authEmail.value, authPassword.value);
+      } else {
+        await Account.signUp(authEmail.value, authPassword.value);
+      }
+      authForm.reset();
+      closeAuthModal();
+    } catch (err) {
+      authError.textContent = authErrorMessage(err);
+      authError.hidden = false;
+    } finally {
+      authSubmit.disabled = false;
+    }
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    await Account.logOut();
+    closeAuthModal();
+  });
+
+  claimWeeklyBtn.addEventListener("click", async () => {
+    claimWeeklyBtn.disabled = true;
+    await Account.claimWeekly();
+    claimWeeklyBtn.disabled = false;
+  });
+
+  document.querySelectorAll(".buy-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!Account.user) {
+        openAuthModal();
+        return;
+      }
+      const price = Number(btn.dataset.price);
+      const qty = Number(btn.dataset.qty || 1);
+      if ((Account.data.coins || 0) < price) return;
+      btn.disabled = true;
+      await Account.saveData({
+        coins: Account.data.coins - price,
+        boosterCount: (Account.data.boosterCount || 0) + qty,
+      });
+      btn.disabled = false;
+    });
+  });
+} else {
+  // Mode invité : pas de comptes, on masque tout ce qui s'y rattache.
+  accountBar.hidden = true;
+  shopTabBtn.hidden = true;
+}
+
+function authErrorMessage(err) {
+  const map = {
+    "auth/email-already-in-use": "Un compte existe déjà avec cet email.",
+    "auth/invalid-email": "Adresse email invalide.",
+    "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
+    "auth/user-not-found": "Aucun compte avec cet email.",
+    "auth/wrong-password": "Mot de passe incorrect.",
+    "auth/invalid-credential": "Email ou mot de passe incorrect.",
+  };
+  return map[err.code] || "Une erreur est survenue, réessaie.";
+}
+
+function refreshAccountUI() {
+  if (!Account.enabled) return;
+
+  if (Account.user) {
+    loginBtn.textContent = Account.user.email.split("@")[0];
+  } else {
+    loginBtn.textContent = "Se connecter";
+  }
+
+  if (usingCloudAccount()) {
+    const count = Account.data.boosterCount || 0;
+    boosterBalanceEl.hidden = false;
+    boosterBalanceEl.textContent = `${count} booster${count > 1 ? "s" : ""} disponible${count > 1 ? "s" : ""}`;
+    openBtn.disabled = count <= 0;
+    openBtn.textContent = count > 0 ? "Ouvrir un booster" : "Plus de booster — attends lundi ou passe à la boutique";
+
+    coinsBalanceEl.textContent = Account.data.coins || 0;
+
+    weeklyBanner.hidden = !Account.isWeeklyClaimAvailable();
+  } else {
+    // Account.enabled est vrai ici mais personne n'est connecté.
+    boosterBalanceEl.hidden = false;
+    boosterBalanceEl.textContent = "Connecte-toi pour recevoir tes boosters gratuits";
+    openBtn.disabled = false;
+    openBtn.textContent = "Se connecter pour jouer";
+    weeklyBanner.hidden = true;
+  }
+
+  renderCollection();
+}
+
+Account.onChange(refreshAccountUI);
 
 // --- Init ---------------------------------------------------------------
 

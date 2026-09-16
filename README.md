@@ -66,6 +66,71 @@ théorie, sortir plusieurs fois dans le même booster).
 
 ## Collection
 
-La collection (cartes obtenues + nombre d'exemplaires) est sauvegardée dans
-le `localStorage` du navigateur : propre à chaque appareil/navigateur, sans
-compte ni serveur.
+- **Sans compte configuré (mode invité)** : la collection est sauvegardée
+  dans le `localStorage` du navigateur, propre à chaque appareil, boosters
+  illimités — c'est le comportement par défaut tant que Firebase n'est pas
+  configuré (voir plus bas).
+- **Avec un compte** : la collection, les boosters disponibles et les
+  pièces sont stockés dans le cloud (Firestore), synchronisés entre
+  appareils.
+
+## Comptes, monnaie virtuelle et récompense hebdomadaire (Firebase)
+
+Aucun argent réel n'est impliqué : c'est un fan-projet non officiel, il
+n'y a donc pas de vraie boutique. À la place :
+
+- **10 boosters offerts** + **600 "Pièces Leonida"** (monnaie 100% virtuelle)
+  à la création du compte.
+- **+1 booster gratuit chaque semaine**, réclamable dès le lundi 7h (heure
+  du joueur) jusqu'au lundi suivant — pas besoin d'être connecté pile à
+  l'heure, la bannière reste affichée toute la semaine tant qu'il n'a pas
+  été réclamé.
+- **Boutique** : dépenser des pièces contre des boosters supplémentaires.
+
+### Mise en place (à faire une seule fois)
+
+Ce site reste 100% statique (aucun serveur à héberger) : Firebase fournit
+juste l'authentification et la base de données depuis le navigateur.
+
+1. Va sur https://console.firebase.google.com et crée un nouveau projet
+   (gratuit, offre "Spark").
+2. Dans le projet, clique sur l'icône **`</>`** ("Ajouter une application
+   Web"), donne-lui un nom, puis copie l'objet `firebaseConfig` qui
+   s'affiche.
+3. Colle ces valeurs dans `firebase-config.js` à la place des
+   `"REMPLACE_MOI"`.
+4. **Authentication** → onglet *Sign-in method* → active le fournisseur
+   **Email/Password**.
+5. **Firestore Database** → *Créer une base de données* → mode production,
+   région au choix (ex: `eur3`).
+6. Dans Firestore → onglet **Règles**, colle ceci puis publie :
+
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+
+   Ces règles garantissent que chaque joueur ne peut lire/modifier que ses
+   propres données (impossible de voir ou modifier le compte d'un autre
+   joueur).
+7. Commit + push `firebase-config.js` avec tes vraies valeurs, puis
+   redéploie (GitHub Pages se met à jour automatiquement après un push).
+
+Tant que `firebase-config.js` garde ses valeurs par défaut, le site
+détecte l'absence de configuration et reste en mode invité (aucun bouton
+de connexion visible, comportement identique à avant les comptes) — donc
+rien ne casse si tu déploies avant d'avoir fini cette étape.
+
+### Ajuster l'économie
+
+Dans `auth.js` : `STARTING_BOOSTERS` (10) et `STARTING_COINS` (600).
+Dans `index.html`, section `#tab-shop` : le prix (`data-price`) et la
+quantité (`data-qty`) de chaque objet de la boutique.
+Dans `auth.js`, fonction `_mostRecentMondaySevenAM` : le jour/heure de la
+récompense hebdomadaire (actuellement lundi 7h, heure locale du joueur).

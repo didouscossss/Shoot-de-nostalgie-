@@ -798,3 +798,205 @@ body.shake {
   font-size: 0.85rem;
   margin-top: 0.2rem;
 }
+
+/* --- Compte / boutique / récompense hebdo --- */
+.account-bar {
+  display: flex;
+  align-items: center;
+}
+
+.account-btn {
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.weekly-banner {
+  max-width: 640px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: linear-gradient(90deg, rgba(255, 46, 151, 0.18), rgba(0, 229, 255, 0.18));
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.claim-btn {
+  border: none;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0a12;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  flex: none;
+}
+
+.booster-balance {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--accent-2);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* --- Modale de connexion --- */
+.auth-stage {
+  width: min(90vw, 380px);
+}
+
+.auth-card {
+  background: #14101f;
+  border: 1px solid var(--card-border);
+  border-radius: 1.1rem;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+}
+
+.auth-card h2 {
+  margin: 0 0 1.25rem;
+}
+
+.auth-error {
+  background: rgba(255, 46, 151, 0.15);
+  border: 1px solid rgba(255, 46, 151, 0.4);
+  color: #ffb3d9;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+  margin: 0 0 1rem;
+}
+
+#authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+#authForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+#authForm input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--card-border);
+  border-radius: 0.6rem;
+  padding: 0.65rem 0.8rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+#authForm input:focus {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.auth-switch {
+  margin: 1.1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* --- Boutique --- */
+.shop-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.shop-coins {
+  font-size: 1.05rem;
+  margin: 0.5rem 0 0.2rem;
+}
+
+.shop-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.shop-item {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.shop-item-visual {
+  font-size: 2.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.shop-item h3 {
+  margin: 0 0 0.4rem;
+}
+
+.shop-item p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.buy-btn {
+  border: none;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0a12;
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .weekly-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+}
