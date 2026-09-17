@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Platform } f
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useAuth } from "../hooks/useAuth";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { updateDistractingApps } from "../services/auth";
 import {
   isBlockingSupported,
   requestBlockingPermissions,
@@ -60,7 +59,7 @@ export default function PresenceScreen() {
   async function saveSelectedApps() {
     if (!user) return;
     const list = Array.from(selectedApps);
-    await updateDoc(doc(db, "users", user.uid), { distractingApps: list });
+    await updateDistractingApps(user.uid, list);
     setAppPickerOpen(false);
   }
 

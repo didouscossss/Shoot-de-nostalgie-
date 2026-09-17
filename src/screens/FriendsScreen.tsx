@@ -6,9 +6,8 @@ import {
   joinRelationshipByCode,
   subscribeToMyRelationships,
 } from "../services/relationships";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
-import type { Relationship, UserProfile } from "../models/types";
+import { getUserProfileOnce } from "../services/auth";
+import type { Relationship } from "../models/types";
 import { theme } from "../theme/theme";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,8 +29,7 @@ function RelationshipRow({
 
   useEffect(() => {
     if (!otherUid) return;
-    getDoc(doc(db, "users", otherUid)).then((snap) => {
-      const p = snap.data() as UserProfile | undefined;
+    getUserProfileOnce(otherUid).then((p) => {
       setOtherName(p?.displayName ?? "Quelqu'un");
     });
   }, [otherUid]);

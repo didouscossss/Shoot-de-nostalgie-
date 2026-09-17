@@ -13,7 +13,8 @@ import {
   onSnapshot,
   getDocs,
 } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db, FIREBASE_IS_CONFIGURED } from "../firebase/config";
+import * as demo from "./demoBackend";
 import type { Relationship } from "../models/types";
 
 function generateInviteCode(): string {
@@ -27,6 +28,7 @@ function generateInviteCode(): string {
 
 /** Crée une invitation en attente : l'autre personne la rejoint avec le code. */
 export async function createRelationshipInvite(uid: string): Promise<Relationship> {
+  if (!FIREBASE_IS_CONFIGURED) return demo.createRelationshipInviteDemo(uid);
   const inviteCode = generateInviteCode();
   const ref = await addDoc(collection(db, "relationships"), {
     memberUids: [uid],
@@ -47,6 +49,7 @@ export async function createRelationshipInvite(uid: string): Promise<Relationshi
 
 /** Rejoint une relation en attente grâce à son code d'invitation. */
 export async function joinRelationshipByCode(uid: string, inviteCode: string): Promise<Relationship> {
+  if (!FIREBASE_IS_CONFIGURED) return demo.joinRelationshipByCodeDemo(uid, inviteCode);
   const q = query(
     collection(db, "relationships"),
     where("inviteCode", "==", inviteCode.toUpperCase()),
@@ -74,6 +77,7 @@ export async function joinRelationshipByCode(uid: string, inviteCode: string): P
 
 /** Écoute en temps réel toutes les relations actives (ou en attente) d'un utilisateur. */
 export function subscribeToMyRelationships(uid: string, callback: (relationships: Relationship[]) => void) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.subscribeToMyRelationshipsDemo(uid, callback);
   const q = query(collection(db, "relationships"), where("memberUids", "array-contains", uid));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Relationship, "id">) })));

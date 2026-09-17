@@ -5,6 +5,12 @@
 
 export type CosmeticSlot = "hat" | "glasses" | "outfit" | "color" | "accessory";
 
+// Tant que ce sentinel est en place, l'app considère que le compagnon n'a
+// pas encore d'animal choisi et redirige vers l'écran de choix. Défini ici
+// (plutôt que dans companion.ts) pour que demoBackend.ts puisse le réutiliser
+// sans import circulaire.
+export const SPECIES_UNSELECTED = "non-choisi";
+
 export interface UserProfile {
   uid: string;
   displayName: string;

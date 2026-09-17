@@ -14,12 +14,12 @@ import {
   getDoc,
   setDoc,
 } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db, FIREBASE_IS_CONFIGURED } from "../firebase/config";
+import * as demo from "./demoBackend";
+import { SPECIES_UNSELECTED } from "../models/types";
 import type { Companion, CompanionOwnerType, CosmeticItem, InventoryEntry } from "../models/types";
 
-// Tant que ce sentinel est en place, l'app considère que le compagnon n'a
-// pas encore d'animal choisi et redirige vers l'écran de choix.
-export const SPECIES_UNSELECTED = "non-choisi";
+export { SPECIES_UNSELECTED };
 
 export interface SpeciesOption {
   id: string;
@@ -53,6 +53,7 @@ export async function createCompanion(params: {
   name?: string;
   species?: string;
 }): Promise<Companion> {
+  if (!FIREBASE_IS_CONFIGURED) return demo.createCompanionDemo(params);
   const ref = await addDoc(collection(db, "companions"), {
     ownerType: params.ownerType,
     ownerId: params.ownerId,
@@ -67,24 +68,28 @@ export async function createCompanion(params: {
 }
 
 export async function chooseCompanionSpecies(companionId: string, speciesId: string, name?: string) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.chooseCompanionSpeciesDemo(companionId, speciesId, name);
   const updates: Record<string, string> = { species: speciesId };
   if (name && name.trim()) updates.name = name.trim();
   await updateDoc(doc(db, "companions", companionId), updates);
 }
 
 export function subscribeToCompanion(companionId: string, callback: (companion: Companion | null) => void) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.subscribeToCompanionDemo(companionId, callback);
   return onSnapshot(doc(db, "companions", companionId), (snap) => {
     callback(snap.exists() ? ({ id: snap.id, ...(snap.data() as Omit<Companion, "id">) }) : null);
   });
 }
 
 export async function addPresenceSecondsToCompanion(companionId: string, seconds: number) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.addPresenceSecondsDemo(companionId, seconds);
   await updateDoc(doc(db, "companions", companionId), {
     totalPresenceSeconds: increment(seconds),
   });
 }
 
 export async function equipCosmetic(companionId: string, slot: string, cosmeticItemId: string) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.equipCosmeticDemo(companionId, slot, cosmeticItemId);
   await updateDoc(doc(db, "companions", companionId), {
     [`equippedCosmetics.${slot}`]: cosmeticItemId,
   });
@@ -109,6 +114,7 @@ export const STARTER_CATALOG: CosmeticItem[] = [
 ];
 
 export async function purchaseCosmetic(uid: string, item: CosmeticItem, currentBalance: number) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.purchaseCosmeticDemo(uid, item, currentBalance);
   if (currentBalance < item.price) {
     throw new Error("insufficient-moments");
   }
@@ -125,6 +131,7 @@ export async function purchaseCosmetic(uid: string, item: CosmeticItem, currentB
 }
 
 export function subscribeToInventory(uid: string, callback: (entries: InventoryEntry[]) => void) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.subscribeToInventoryDemo(uid, callback);
   return onSnapshot(collection(db, "inventory", uid, "items"), (snap) => {
     callback(snap.docs.map((d) => d.data() as InventoryEntry));
   });

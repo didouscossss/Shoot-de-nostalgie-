@@ -20,7 +20,8 @@ import {
   increment,
   orderBy,
 } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db, FIREBASE_IS_CONFIGURED } from "../firebase/config";
+import * as demo from "./demoBackend";
 import type { DetectionMethod, PresenceSession, UserProfile } from "../models/types";
 import { computeTotalMomentsEarned } from "./momentsEconomy";
 import { addPresenceSecondsToCompanion } from "./companion";
@@ -30,6 +31,7 @@ export async function startPresenceSession(
   participantUids: string[],
   detectionMethod: DetectionMethod = "manual"
 ): Promise<PresenceSession> {
+  if (!FIREBASE_IS_CONFIGURED) return demo.startPresenceSessionDemo(relationshipId, participantUids);
   const startedAt = new Date().toISOString();
   const ref = await addDoc(collection(db, "presenceSessions"), {
     relationshipId,
@@ -75,6 +77,7 @@ async function countSessionsThisWeek(relationshipId: string, before: Date): Prom
 export async function endPresenceSession(
   session: PresenceSession
 ): Promise<{ durationSeconds: number; momentsEarned: number }> {
+  if (!FIREBASE_IS_CONFIGURED) return demo.endPresenceSessionDemo(session);
   const endedAt = new Date();
   const startedAt = new Date(session.startedAt);
   const durationSeconds = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
@@ -104,6 +107,7 @@ export async function endPresenceSession(
 }
 
 export function subscribeToSessionHistory(relationshipId: string, callback: (sessions: PresenceSession[]) => void) {
+  if (!FIREBASE_IS_CONFIGURED) return demo.subscribeToSessionHistoryDemo(relationshipId, callback);
   const q = query(
     collection(db, "presenceSessions"),
     where("relationshipId", "==", relationshipId),
