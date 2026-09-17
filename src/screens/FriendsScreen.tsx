@@ -18,10 +18,12 @@ function RelationshipRow({
   relationship,
   myUid,
   onStartPresence,
+  onViewHistory,
 }: {
   relationship: Relationship;
   myUid: string;
   onStartPresence: (r: Relationship, otherName: string) => void;
+  onViewHistory: (r: Relationship, otherName: string) => void;
 }) {
   const [otherName, setOtherName] = useState("...");
   const otherUid = relationship.memberUids.find((uid) => uid !== myUid);
@@ -45,7 +47,12 @@ function RelationshipRow({
 
   return (
     <TouchableOpacity style={styles.row} onPress={() => onStartPresence(relationship, otherName)}>
-      <Text style={styles.rowTitle}>{otherName}</Text>
+      <View style={styles.rowHeader}>
+        <Text style={styles.rowTitle}>{otherName}</Text>
+        <TouchableOpacity onPress={() => onViewHistory(relationship, otherName)}>
+          <Text style={styles.historyLink}>Historique</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.rowMeta}>Démarrer une Présence →</Text>
     </TouchableOpacity>
   );
@@ -87,6 +94,10 @@ export default function FriendsScreen() {
     });
   }
 
+  function handleViewHistory(relationship: Relationship, otherName: string) {
+    navigation.navigate("History", { relationshipId: relationship.id, otherName });
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mes proches</Text>
@@ -95,7 +106,14 @@ export default function FriendsScreen() {
         data={relationships}
         keyExtractor={(r) => r.id}
         renderItem={({ item }) =>
-          user ? <RelationshipRow relationship={item} myUid={user.uid} onStartPresence={handleStartPresence} /> : null
+          user ? (
+            <RelationshipRow
+              relationship={item}
+              myUid={user.uid}
+              onStartPresence={handleStartPresence}
+              onViewHistory={handleViewHistory}
+            />
+          ) : null
         }
         ListEmptyComponent={<Text style={styles.empty}>Ajoute un premier proche pour commencer.</Text>}
         style={{ marginBottom: 20 }}
@@ -131,8 +149,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
   },
+  rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   rowTitle: { color: theme.colors.text, fontWeight: "700", fontSize: 16 },
   rowMeta: { color: theme.colors.muted, marginTop: 4, fontSize: 13 },
+  historyLink: { color: theme.colors.accent2, fontSize: 13, fontWeight: "700" },
   empty: { color: theme.colors.muted, textAlign: "center", marginTop: 20 },
   primaryBtn: { backgroundColor: theme.colors.accent, borderRadius: 999, paddingVertical: 14, alignItems: "center" },
   primaryBtnLabel: { color: "#1b1a2e", fontWeight: "800" },
