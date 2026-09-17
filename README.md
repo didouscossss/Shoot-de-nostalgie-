@@ -44,6 +44,31 @@ correct sur le papier, mais non compilés ici.
 npm install
 ```
 
+### 0. Essayer tout de suite, sans rien configurer (mode démo)
+
+Tant que `src/firebase/config.ts` garde ses valeurs `"REMPLACE_MOI"`,
+l'app bascule automatiquement en **mode démo** : chaque service
+(`auth.ts`, `companion.ts`, `relationships.ts`, `presence.ts`) route
+vers `src/services/demoBackend.ts`, un backend en mémoire (aucun
+réseau, aucun compte réel). Une amie de démo ("Léa") est créée
+automatiquement à l'inscription, avec une relation déjà active et une
+session passée, pour que "Mes proches" et "Historique" aient tout de
+suite du contenu à explorer. Pratique pour tester le parcours complet
+(inscription → choix de l'animal → session Présence → Moments →
+boutique) avant même de créer un projet Firebase.
+
+Pour l'essayer dans un navigateur (utile là où Expo Go n'est pas
+disponible) :
+
+```bash
+npm install react-dom react-native-web   # une seule fois
+npx expo export --platform web --output-dir dist
+npx serve dist                            # ou tout autre serveur statique
+```
+
+Le mode démo s'efface tout seul dès que `FIREBASE_CONFIG` contient de
+vraies valeurs (étape 1 ci-dessous).
+
 ### 1. Firebase (comptes + base de données)
 
 1. https://console.firebase.google.com → crée un projet (gratuit).
