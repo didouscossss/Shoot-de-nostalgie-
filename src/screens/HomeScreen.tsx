@@ -1,22 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useAuth } from "../hooks/useAuth";
-import { subscribeToCompanion } from "../services/companion";
+import { subscribeToCompanion, SPECIES_UNSELECTED } from "../services/companion";
 import { logOut } from "../services/auth";
+import CompanionPreview from "../components/CompanionPreview";
 import type { Companion } from "../models/types";
 import { theme } from "../theme/theme";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-
-const COSMETIC_EMOJI: Record<string, string> = {
-  "hat-cap": "🧢",
-  "hat-flower": "🌸",
-  "glasses-round": "🕶️",
-  "color-sunset": "🌅",
-  "outfit-scarf": "🧣",
-  "accessory-star": "✨",
-};
 
 export default function HomeScreen() {
   const { profile } = useAuth();
@@ -28,24 +20,24 @@ export default function HomeScreen() {
     return subscribeToCompanion(profile.companionId, setCompanion);
   }, [profile?.companionId]);
 
+  useEffect(() => {
+    if (companion && companion.species === SPECIES_UNSELECTED) {
+      navigation.replace("ChooseAnimal");
+    }
+  }, [companion, navigation]);
+
   const hoursTogether = companion ? (companion.totalPresenceSeconds / 3600).toFixed(1) : "0";
-  const equippedEmojis = companion ? Object.values(companion.equippedCosmetics) : [];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.greeting}>Salut {profile?.displayName ?? ""} 👋</Text>
 
       <View style={styles.companionCard}>
-        <Text style={styles.companionEmoji}>🐣</Text>
-        <View style={styles.equippedRow}>
-          {equippedEmojis.map((id) => (
-            <Text key={id} style={styles.equippedEmoji}>
-              {COSMETIC_EMOJI[id] ?? "❔"}
-            </Text>
-          ))}
-        </View>
-        <Text style={styles.companionName}>{companion?.name ?? "Ton compagnon"}</Text>
+        <CompanionPreview companion={companion} size={80} />
         <Text style={styles.companionMeta}>{hoursTogether} h passées ensemble</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("ChooseAnimal")}>
+          <Text style={styles.changeAnimalLink}>Changer d'animal</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.balanceCard}>
@@ -87,11 +79,8 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: "center",
   },
-  companionEmoji: { fontSize: 80 },
-  equippedRow: { flexDirection: "row", gap: 4, marginTop: 4 },
-  equippedEmoji: { fontSize: 20 },
-  companionName: { color: theme.colors.text, fontSize: 18, fontWeight: "700", marginTop: 8 },
   companionMeta: { color: theme.colors.muted, fontSize: 13, marginTop: 4 },
+  changeAnimalLink: { color: theme.colors.accent2, fontSize: 12, fontWeight: "700", marginTop: 10 },
   balanceCard: {
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.radius,

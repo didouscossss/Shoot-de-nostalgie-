@@ -9,6 +9,7 @@ import FriendsScreen from "../screens/FriendsScreen";
 import PresenceScreen from "../screens/PresenceScreen";
 import ShopScreen from "../screens/ShopScreen";
 import HistoryScreen from "../screens/HistoryScreen";
+import ChooseAnimalScreen from "../screens/ChooseAnimalScreen";
 import { theme } from "../theme/theme";
 
 export type RootStackParamList = {
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Presence: { relationshipId: string; participantUids: string[]; otherName: string };
   Shop: undefined;
   History: { relationshipId: string; otherName: string };
+  ChooseAnimal: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +57,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Presence" component={PresenceScreen} />
           <Stack.Screen name="Shop" component={ShopScreen} />
           <Stack.Screen name="History" component={HistoryScreen} />
+          <Stack.Screen name="ChooseAnimal" component={ChooseAnimalScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

@@ -8,6 +8,7 @@ import {
   equipCosmetic,
   subscribeToCompanion,
 } from "../services/companion";
+import CompanionPreview from "../components/CompanionPreview";
 import type { CosmeticItem, InventoryEntry, Companion } from "../models/types";
 import { theme } from "../theme/theme";
 
@@ -54,6 +55,7 @@ export default function ShopScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Personnalisation</Text>
+      <CompanionPreview companion={companion} size={56} />
       <Text style={styles.balance}>✨ {profile?.momentsBalance ?? 0} Moments</Text>
 
       <FlatList
@@ -82,8 +84,8 @@ export default function ShopScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, padding: 20, paddingTop: 60 },
-  title: { color: theme.colors.text, fontSize: 22, fontWeight: "700" },
-  balance: { color: theme.colors.accent, fontWeight: "700", marginBottom: 16 },
+  title: { color: theme.colors.text, fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  balance: { color: theme.colors.accent, fontWeight: "700", marginTop: 12, marginBottom: 16, textAlign: "center" },
   item: {
     flex: 1,
     backgroundColor: theme.colors.surface,

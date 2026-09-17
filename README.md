@@ -118,15 +118,17 @@ Voir `src/models/types.ts` pour le détail des champs. Collections :
 
 ## Périmètre du MVP actuel
 
-✅ Inscription/connexion · ajout d'un proche par code d'invitation ·
+✅ Inscription/connexion · choix de l'animal du compagnon (8 espèces,
+modifiable à tout moment) · ajout d'un proche par code d'invitation ·
 choix des apps distrayantes (Android) · session Présence manuelle avec
 minuteur · calcul et attribution des Moments · personnalisation basique
-du compagnon (6 cosmétiques) · le compagnon ne régresse jamais.
+du compagnon (6 cosmétiques) · historique des sessions par proche · le
+compagnon ne régresse jamais.
 
 ⏳ Pas encore fait (volontairement, voir le plan de migration) :
 détection automatique par Bluetooth, compagnon commun entre deux
-personnes, souvenirs avec photo, historique détaillé des sessions,
-notifications, achievements.
+personnes, souvenirs avec photo, notifications, achievements, vraies
+illustrations pour les espèces (emoji pour le MVP).
 
 ## Détection de proximité : pourquoi manuelle pour l'instant
 

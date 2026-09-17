@@ -17,6 +17,36 @@ import {
 import { db } from "../firebase/config";
 import type { Companion, CompanionOwnerType, CosmeticItem, InventoryEntry } from "../models/types";
 
+// Tant que ce sentinel est en place, l'app considère que le compagnon n'a
+// pas encore d'animal choisi et redirige vers l'écran de choix.
+export const SPECIES_UNSELECTED = "non-choisi";
+
+export interface SpeciesOption {
+  id: string;
+  name: string;
+  emoji: string;
+  tagline: string;
+}
+
+// Pas de vrais assets illustrés pour le MVP : un emoji représente chaque
+// espèce, comme pour les cosmétiques. Facile à remplacer par de vraies
+// illustrations plus tard sans toucher au modèle de données (species reste
+// un simple identifiant string).
+export const SPECIES_CATALOG: SpeciesOption[] = [
+  { id: "renard", name: "Renard", emoji: "🦊", tagline: "Curieux et fidèle" },
+  { id: "chat", name: "Chat", emoji: "🐱", tagline: "Calme et attachant" },
+  { id: "chien", name: "Chien", emoji: "🐶", tagline: "Joyeux et loyal" },
+  { id: "lapin", name: "Lapin", emoji: "🐰", tagline: "Doux et discret" },
+  { id: "panda", name: "Panda", emoji: "🐼", tagline: "Tranquille et câlin" },
+  { id: "poussin", name: "Poussin", emoji: "🐥", tagline: "Léger et plein de vie" },
+  { id: "hibou", name: "Hibou", emoji: "🦉", tagline: "Sage et observateur" },
+  { id: "dragon", name: "Petit dragon", emoji: "🐲", tagline: "Rare et malicieux" },
+];
+
+export function getSpeciesOption(speciesId: string): SpeciesOption | undefined {
+  return SPECIES_CATALOG.find((s) => s.id === speciesId);
+}
+
 export async function createCompanion(params: {
   ownerType: CompanionOwnerType;
   ownerId: string;
@@ -27,13 +57,19 @@ export async function createCompanion(params: {
     ownerType: params.ownerType,
     ownerId: params.ownerId,
     name: params.name ?? "Mon compagnon",
-    species: params.species ?? "poussin-lumineux",
+    species: params.species ?? SPECIES_UNSELECTED,
     totalPresenceSeconds: 0,
     equippedCosmetics: {},
     createdAt: new Date().toISOString(),
   });
   const snap = await getDoc(ref);
   return { id: ref.id, ...(snap.data() as Omit<Companion, "id">) };
+}
+
+export async function chooseCompanionSpecies(companionId: string, speciesId: string, name?: string) {
+  const updates: Record<string, string> = { species: speciesId };
+  if (name && name.trim()) updates.name = name.trim();
+  await updateDoc(doc(db, "companions", companionId), updates);
 }
 
 export function subscribeToCompanion(companionId: string, callback: (companion: Companion | null) => void) {
