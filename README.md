@@ -1,136 +1,159 @@
-# GTA VI Boosters 🎴
+# Présence 💛
 
-Projet de fan non officiel (sans lien avec Rockstar Games ni Take-Two
-Interactive). Ouvre des boosters de 3 cartes originales et complète ta
-collection. Plus une carte est rare, plus elle est dure à obtenir.
+Une application pour aider à être réellement présent avec ses proches.
+Retrouve quelqu'un que tu apprécies, mets tes réseaux sociaux de côté le
+temps de la rencontre, et fais grandir ton compagnon virtuel en passant du
+vrai temps ensemble.
 
-## Utilisation
+> Ce projet est né d'un pivot complet depuis un précédent prototype
+> ("Shoot de Nostalgie" → jeu de cartes GTA6). L'architecture technique
+> (Firebase Auth + Firestore, discipline de test) a été reprise ; le
+> concept de tirage de cartes a été entièrement retiré.
 
-Aucune installation nécessaire : c'est un site statique en HTML/CSS/JS pur.
+## Pourquoi une vraie application mobile (et pas un site web) ?
 
-- Ouvrir `index.html` directement dans un navigateur, ou
-- Servir le dossier avec n'importe quel serveur statique, par exemple :
+Deux fonctionnalités au cœur du produit sont **techniquement impossibles
+dans un navigateur** :
+
+- **Bloquer/mettre de côté d'autres applications** : ça n'existe que via
+  des API natives (Screen Time sur iOS, Accessibility Service sur
+  Android). Aucune API web n'y donne accès.
+- **Détecter la présence de quelqu'un en arrière-plan** (Bluetooth) : le
+  Web Bluetooth n'existe quasiment pas sur mobile (absent de Safari iOS,
+  très limité sur Chrome Android, jamais en arrière-plan).
+
+C'est pourquoi ce dépôt contient un projet **React Native (Expo) +
+TypeScript**, avec deux modules natifs de référence (`native/ios`,
+`native/android`) à intégrer via `expo prebuild`.
+
+**Pour la première version, seul Android est ciblé** (iOS reste en
+référence dans `native/ios` pour plus tard).
+
+## ⚠️ Limites de cet environnement de développement
+
+Ce code a été écrit et vérifié (TypeScript, logique métier testée) dans un
+environnement **sans SDK Android ni simulateur/émulateur** — donc jamais
+lancé sur un appareil réel ni un émulateur. Avant de considérer une
+fonctionnalité comme acquise, teste-la sur un vrai téléphone Android.
+Les modules natifs (`native/android/*.kt`) sont du code de référence
+correct sur le papier, mais non compilés ici.
+
+## Mise en route
 
 ```bash
-npx serve .
+npm install
 ```
 
-## Déploiement (GitHub Pages)
+### 1. Firebase (comptes + base de données)
 
-1. Dans les paramètres du dépôt GitHub, section **Pages**.
-2. Choisir la branche `main` et le dossier `/ (root)`.
-3. Le site est alors disponible à l'adresse fournie par GitHub Pages.
+1. https://console.firebase.google.com → crée un projet (gratuit).
+2. Ajoute une application Web (`</>`) — oui, "Web", même pour un projet
+   mobile : c'est ce type d'app qui donne le `firebaseConfig` utilisé par
+   le SDK JS Firebase, y compris depuis React Native.
+3. Colle les valeurs obtenues dans `src/firebase/config.ts`
+   (`FIREBASE_CONFIG`).
+4. **Authentication** → *Sign-in method* → active **Email/Password**.
+5. **Firestore Database** → créer une base (mode production).
+6. Dans Firestore → **Règles**, colle le contenu de `firestore.rules`
+   (à la racine du repo) et publie.
 
-## Structure
+### 2. Lancer l'app en développement (Expo Go — sans blocage réel)
 
-- `index.html` — structure de la page (onglets Boosters / Collection).
-- `style.css` — thème visuel (cadre coloré selon la rareté, animations d'ouverture et de flip).
-- `cards-data.js` — la liste des cartes (`CARDS`). **C'est ce fichier à remplacer/compléter avec la vraie liste.**
-- `script.js` — moteur du jeu : tirage pondéré par rareté, collection (localStorage), rendu.
-
-## Format d'une carte (`cards-data.js`)
-
-```js
-{
-  id: "c013",              // identifiant unique et stable (ne change jamais)
-  number: "013",           // numéro affiché sur la carte
-  name: "Franklin Diaz",   // nom de la carte
-  category: "Personnage",  // Personnage / Véhicule / Lieu / Environnement / Autre
-  rarity: "legendaire",    // normale / rare / ultra / epique / legendaire / secrete
-  tagline: "...",          // courte accroche
-  image: "cards/013.jpg",  // optionnel : chemin vers le visuel de la carte
-}
+```bash
+npx expo start
 ```
 
-Si `image` est absent, une pastille de repli s'affiche à la place (pas de
-photo/artwork officiel du jeu utilisé).
+Scanne le QR code avec l'app **Expo Go** sur un téléphone Android. Tout
+fonctionne (comptes, proches, compagnon, économie de Moments) **sauf** le
+blocage réel des apps : Expo Go ne peut pas charger de modules natifs
+personnalisés. Le minuteur de session tourne quand même, sans blocage
+effectif (`console.warn` visible dans les logs).
 
-## Réglage des probabilités de tirage
+### 3. Build natif (avec le vrai blocage Android)
 
-Dans `script.js`, le tableau `RARITY_CONFIG` définit le poids de chaque
-rareté (plus le poids est petit, plus elle est rare) :
-
-```js
-const RARITY_CONFIG = [
-  { key: "normale",    label: "Normale",     weight: 55,  color: "#9aa5b1" },
-  { key: "rare",       label: "Rare",        weight: 27,  color: "#3b82f6" },
-  { key: "ultra",      label: "Ultra Rare",  weight: 10,  color: "#14b8a6" },
-  { key: "epique",     label: "Épique",      weight: 5.5, color: "#a855f7" },
-  { key: "legendaire", label: "Légendaire",  weight: 2,   color: "#f5a623" },
-  { key: "secrete",    label: "Secrète",     weight: 0.5, color: "#ff2e97" },
-];
+```bash
+npx expo prebuild --platform android
 ```
 
-Chaque booster tire 3 cartes indépendamment (une carte peut donc, en
-théorie, sortir plusieurs fois dans le même booster).
+Puis copie les fichiers de `native/android/` dans le dossier généré
+`android/app/src/main/java/.../` (adapter le nom de package), déclare le
+service et les permissions dans `android/app/src/main/AndroidManifest.xml`
+(voir les commentaires en bas de `AppBlockerModule.kt` et
+`AppBlockerAccessibilityService.kt`), puis :
 
-## Collection
+```bash
+npx expo run:android
+```
 
-- **Sans compte configuré (mode invité)** : la collection est sauvegardée
-  dans le `localStorage` du navigateur, propre à chaque appareil, boosters
-  illimités — c'est le comportement par défaut tant que Firebase n'est pas
-  configuré (voir plus bas).
-- **Avec un compte** : la collection, les boosters disponibles et les
-  pièces sont stockés dans le cloud (Firestore), synchronisés entre
-  appareils.
+(Nécessite Android Studio / le SDK Android installés sur ta machine —
+absents de cet environnement de développement.)
 
-## Comptes, monnaie virtuelle et récompense hebdomadaire (Firebase)
+## Architecture
 
-Aucun argent réel n'est impliqué : c'est un fan-projet non officiel, il
-n'y a donc pas de vraie boutique. À la place :
+```
+App.tsx                        point d'entrée, monte RootNavigator
+src/
+  firebase/config.ts           connexion Firebase (Auth + Firestore)
+  models/types.ts              types partagés (User, Relationship, PresenceSession, Companion, ...)
+  services/
+    auth.ts                    inscription / connexion / profil
+    relationships.ts           inviter un proche / rejoindre par code
+    presence.ts                démarrer/terminer une session, calcul des Moments
+    momentsEconomy.ts          fonctions pures de calcul (à équilibrer plus tard)
+    companion.ts                compagnon + boutique de cosmétiques
+    appBlocking.ts             abstraction JS des modules natifs
+  hooks/useAuth.ts             état de connexion + profil en temps réel
+  screens/                     Auth, Home, Friends, Presence, Shop
+  navigation/RootNavigator.tsx
+native/
+  android/                     module Kotlin (UsageStats + Accessibility + overlay)
+  ios/                         module Swift (Screen Time) — référence pour plus tard
+firestore.rules                règles de sécurité à publier sur Firebase
+```
 
-- **10 boosters offerts** + **600 "Pièces Leonida"** (monnaie 100% virtuelle)
-  à la création du compte.
-- **+1 booster gratuit chaque semaine**, réclamable dès le lundi 7h (heure
-  du joueur) jusqu'au lundi suivant — pas besoin d'être connecté pile à
-  l'heure, la bannière reste affichée toute la semaine tant qu'il n'a pas
-  été réclamé.
-- **Boutique** : dépenser des pièces contre des boosters supplémentaires.
+## Modèle de données (Firestore)
 
-### Mise en place (à faire une seule fois)
+Voir `src/models/types.ts` pour le détail des champs. Collections :
+`users`, `relationships`, `presenceSessions`, `companions`, `inventory/{uid}/items`, `memories` (souvenirs — pas encore branchés dans l'UI du MVP).
 
-Ce site reste 100% statique (aucun serveur à héberger) : Firebase fournit
-juste l'authentification et la base de données depuis le navigateur.
+## Périmètre du MVP actuel
 
-1. Va sur https://console.firebase.google.com et crée un nouveau projet
-   (gratuit, offre "Spark").
-2. Dans le projet, clique sur l'icône **`</>`** ("Ajouter une application
-   Web"), donne-lui un nom, puis copie l'objet `firebaseConfig` qui
-   s'affiche.
-3. Colle ces valeurs dans `firebase-config.js` à la place des
-   `"REMPLACE_MOI"`.
-4. **Authentication** → onglet *Sign-in method* → active le fournisseur
-   **Email/Password**.
-5. **Firestore Database** → *Créer une base de données* → mode production,
-   région au choix (ex: `eur3`).
-6. Dans Firestore → onglet **Règles**, colle ceci puis publie :
+✅ Inscription/connexion · ajout d'un proche par code d'invitation ·
+choix des apps distrayantes (Android) · session Présence manuelle avec
+minuteur · calcul et attribution des Moments · personnalisation basique
+du compagnon (6 cosmétiques) · le compagnon ne régresse jamais.
 
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
+⏳ Pas encore fait (volontairement, voir le plan de migration) :
+détection automatique par Bluetooth, compagnon commun entre deux
+personnes, souvenirs avec photo, historique détaillé des sessions,
+notifications, achievements.
 
-   Ces règles garantissent que chaque joueur ne peut lire/modifier que ses
-   propres données (impossible de voir ou modifier le compte d'un autre
-   joueur).
-7. Commit + push `firebase-config.js` avec tes vraies valeurs, puis
-   redéploie (GitHub Pages se met à jour automatiquement après un push).
+## Détection de proximité : pourquoi manuelle pour l'instant
 
-Tant que `firebase-config.js` garde ses valeurs par défaut, le site
-détecte l'absence de configuration et reste en mode invité (aucun bouton
-de connexion visible, comportement identique à avant les comptes) — donc
-rien ne casse si tu déploies avant d'avoir fini cette étape.
+Le déclenchement d'une session est **manuel** (les deux personnes
+confirment explicitement), plutôt qu'une détection Bluetooth automatique
+en arrière-plan. Raison : le BLE en arrière-plan est peu fiable de façon
+inégale selon les appareils (agressif "battery saving" sur beaucoup
+d'Android — Xiaomi, Huawei, Samsung tuent les services en fond), et
+demanderait une permission de localisation en arrière-plan intrusive pour
+un gain de fiabilité incertain. Une détection automatique reste un sujet
+à explorer une fois la boucle centrale (présence manuelle → Moments →
+compagnon) validée avec de vrais utilisateurs.
 
-### Ajuster l'économie
+## Économie des Moments (valeurs provisoires)
 
-Dans `auth.js` : `STARTING_BOOSTERS` (10) et `STARTING_COINS` (600).
-Dans `index.html`, section `#tab-shop` : le prix (`data-price`) et la
-quantité (`data-qty`) de chaque objet de la boutique.
-Dans `auth.js`, fonction `_mostRecentMondaySevenAM` : le jour/heure de la
-récompense hebdomadaire (actuellement lundi 7h, heure locale du joueur).
+Dans `src/services/momentsEconomy.ts` — commenté comme temporaire dans le
+code, à ajuster une fois testé avec de vrais utilisateurs :
+
+- Moins de 15 min : 0 Moment (évite les sessions symboliques).
+- 15-30 min : 20 · 30-60 min : 50 · 1h-2h : 120 · au-delà : bonus dégressif.
+- Bonus de régularité par relation : +20 (2ᵉ session de la semaine),
+  +60 (3ᵉ), +150 (5ᵉ et au-delà).
+
+## Philosophie produit (à ne jamais perdre de vue en ajoutant une feature)
+
+- Renforcement positif uniquement : le compagnon ne meurt, ne souffre et
+  ne culpabilise jamais.
+- Jamais de comparaison sociale entre relations ("tu vois plus X que Y").
+- Le ton est "quelqu'un que tu apprécies est avec toi", jamais "tu utilises
+  trop ton téléphone".
