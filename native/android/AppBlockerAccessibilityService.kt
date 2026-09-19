@@ -43,9 +43,5 @@ res/xml/accessibility_service_config.xml — à créer :
     android:canRetrieveWindowContent="false"
     android:notificationTimeout="100" />
 
-ShieldActivity : une simple Activity plein écran, thème transparent/overlay,
-qui affiche un message chaleureux ("Quelqu'un que tu apprécies est avec toi
-— profite du moment 💛") avec un bouton "Revenir à Présence" qui ramène vers
-l'app principale. Volontairement pas construite ici (c'est de la UI native
-simple, à faire directement dans le projet Android généré).
+ShieldActivity : voir ShieldActivity.kt (dans ce même dossier).
 */

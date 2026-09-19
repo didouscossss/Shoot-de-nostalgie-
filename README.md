@@ -100,11 +100,14 @@ effectif (`console.warn` visible dans les logs).
 npx expo prebuild --platform android
 ```
 
-Puis copie les fichiers de `native/android/` dans le dossier généré
-`android/app/src/main/java/.../` (adapter le nom de package), déclare le
-service et les permissions dans `android/app/src/main/AndroidManifest.xml`
-(voir les commentaires en bas de `AppBlockerModule.kt` et
-`AppBlockerAccessibilityService.kt`), puis :
+Puis copie les fichiers de `native/android/` (`AppBlockerModule.kt`,
+`AppBlockerAccessibilityService.kt`, `ShieldActivity.kt`,
+`ProximityModule.kt`) dans le dossier généré
+`android/app/src/main/java/.../` (adapter le nom de package), déclare les
+services/activités et les permissions dans
+`android/app/src/main/AndroidManifest.xml` (voir les commentaires en bas
+de chaque fichier `.kt`), enregistre `AppBlockerModule` ET
+`ProximityModule` dans le `ReactPackage` du projet généré, puis :
 
 ```bash
 npx expo run:android
@@ -126,13 +129,19 @@ src/
     presence.ts                démarrer/terminer une session, calcul des Moments
     momentsEconomy.ts          fonctions pures de calcul (à équilibrer plus tard)
     companion.ts                compagnon + boutique de cosmétiques
-    appBlocking.ts             abstraction JS des modules natifs
+    appBlocking.ts             abstraction JS du blocage natif
+    proximity.ts               abstraction JS de la détection BLE
+    socialApps.ts               catalogue des réseaux à défilement infini
   hooks/useAuth.ts             état de connexion + profil en temps réel
   screens/                     Auth, Home, Friends, Presence, Shop
   navigation/RootNavigator.tsx
 native/
-  android/                     module Kotlin (UsageStats + Accessibility + overlay)
-  ios/                         module Swift (Screen Time) — référence pour plus tard
+  android/
+    AppBlockerModule.kt          UsageStats + Accessibility + overlay
+    AppBlockerAccessibilityService.kt   détecte l'app au premier plan
+    ShieldActivity.kt            écran affiché par-dessus une app bloquée
+    ProximityModule.kt           annonce/scan BLE pour détecter un proche
+  ios/                     module Swift (Screen Time) — référence pour plus tard
 firestore.rules                règles de sécurité à publier sur Firebase
 ```
 
@@ -145,27 +154,68 @@ Voir `src/models/types.ts` pour le détail des champs. Collections :
 
 ✅ Inscription/connexion · choix de l'animal du compagnon (8 espèces,
 modifiable à tout moment) · ajout d'un proche par code d'invitation ·
-choix des apps distrayantes (Android) · session Présence manuelle avec
-minuteur · calcul et attribution des Moments · personnalisation basique
-du compagnon (6 cosmétiques) · historique des sessions par proche · le
-compagnon ne régresse jamais.
+**détection automatique d'un proche à proximité (BLE, premier plan)** ·
+choix des réseaux sociaux à défilement infini à mettre de côté (Android) ·
+session Présence avec minuteur, démarrage automatique dès détection (ou
+manuel en secours) · calcul et attribution des Moments · personnalisation
+basique du compagnon (6 cosmétiques) · historique des sessions par proche
+· le compagnon ne régresse jamais.
 
 ⏳ Pas encore fait (volontairement, voir le plan de migration) :
-détection automatique par Bluetooth, compagnon commun entre deux
-personnes, souvenirs avec photo, notifications, achievements, vraies
-illustrations pour les espèces (emoji pour le MVP).
+détection BLE **en arrière-plan** (nécessite un foreground service, voir
+ci-dessous), compagnon commun entre deux personnes, souvenirs avec photo,
+notifications, achievements, vraies illustrations pour les espèces (emoji
+pour le MVP).
 
-## Détection de proximité : pourquoi manuelle pour l'instant
+## Détection de proximité : comment ça marche réellement, et ses limites
 
-Le déclenchement d'une session est **manuel** (les deux personnes
-confirment explicitement), plutôt qu'une détection Bluetooth automatique
-en arrière-plan. Raison : le BLE en arrière-plan est peu fiable de façon
-inégale selon les appareils (agressif "battery saving" sur beaucoup
-d'Android — Xiaomi, Huawei, Samsung tuent les services en fond), et
-demanderait une permission de localisation en arrière-plan intrusive pour
-un gain de fiabilité incertain. Une détection automatique reste un sujet
-à explorer une fois la boucle centrale (présence manuelle → Moments →
-compagnon) validée avec de vrais utilisateurs.
+La détection est faite avec de vraies API Android (`BluetoothLeAdvertiser`
+/ `BluetoothLeScanner`, voir `native/android/ProximityModule.kt`), pas une
+API inventée. Le principe : quand tu ouvres l'écran Présence avec un
+proche, ton téléphone **annonce** (BLE advertising) ton identifiant de
+compte, et **scanne** en même temps les annonces des autres téléphones qui
+font tourner l'app. Dès que le jeton du proche recherché est capté avec un
+signal suffisant, la session démarre automatiquement (blocage des réseaux
+inclus).
+
+Limites réelles, assumées volontairement pour ce MVP :
+
+- **Ça ne fonctionne que si l'app est ouverte des deux côtés** (pas de
+  service en arrière-plan). Une détection qui marche même app fermée
+  demanderait un *foreground service* Android avec une notification
+  permanente — plus de complexité, plus de batterie, une permission
+  supplémentaire (`FOREGROUND_SERVICE`) — volontairement pas fait tant que
+  la détection au premier plan n'est pas validée sur de vrais appareils.
+- **Sur Android < 12**, le scan BLE exige en plus la permission de
+  localisation (contrainte du système, indépendante de notre usage réel :
+  on ne lit jamais la position GPS). Sur Android 12+, on déclare
+  `BLUETOOTH_SCAN` avec `neverForLocation`, donc pas besoin de cette
+  permission.
+- Le RSSI (intensité du signal Bluetooth) est un indicateur de distance
+  **approximatif** : le seuil `NEARBY_RSSI_THRESHOLD` dans
+  `PresenceScreen.tsx` est une valeur de départ à ajuster une fois testée
+  sur de vrais téléphones (le signal varie beaucoup selon le modèle et
+  l'environnement).
+- Certains constructeurs (Xiaomi, Huawei, Samsung...) restreignent le scan
+  BLE via leurs réglages d'économie de batterie, même app ouverte.
+- Un bouton **"Démarrer quand même"** reste toujours visible : si le
+  Bluetooth est indisponible, la permission refusée, ou que l'autre
+  personne n'a pas l'app ouverte, la session peut toujours démarrer
+  manuellement — le comportement d'origine du MVP reste le filet de
+  sécurité.
+
+## Blocage : quels réseaux, et comment
+
+Plutôt que de proposer de bloquer n'importe quelle app installée, l'écran
+de sélection (`src/services/socialApps.ts`) ne propose que des réseaux à
+défilement infini reconnus (TikTok, Instagram, Facebook, X, Snapchat,
+YouTube, Reddit, Pinterest, LinkedIn) — c'est le cœur du produit : mettre
+de côté le scroll, pas la calculatrice. Le blocage lui-même reste ce qui
+est réellement possible sur Android (voir plus haut) : détection de l'app
+au premier plan par un service d'accessibilité +
+`AppBlockerAccessibilityService.kt`, écran de rappel par-dessus
+(`ShieldActivity.kt`) — jamais un vrai "empêchement" système, Android ne
+le permet pas pour une app tierce.
 
 ## Économie des Moments (valeurs provisoires)
 

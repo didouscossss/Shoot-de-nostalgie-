@@ -59,9 +59,13 @@ class AppBlockerModule(reactContext: ReactApplicationContext) :
 
   @ReactMethod
   fun hasAccessibilityPermission(promise: Promise) {
-    // TODO : vérifier via Settings.Secure.ACCESSIBILITY_ENABLED + la liste
-    // des services activés (comparer au nom qualifié du service ci-dessous).
-    promise.resolve(false)
+    val expectedComponent = "${reactApplicationContext.packageName}/${AppBlockerAccessibilityService::class.java.name}"
+    val enabledServices = Settings.Secure.getString(
+      reactApplicationContext.contentResolver,
+      Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+    ) ?: ""
+    val isEnabled = enabledServices.split(':').any { it.equals(expectedComponent, ignoreCase = true) }
+    promise.resolve(isEnabled)
   }
 
   @ReactMethod

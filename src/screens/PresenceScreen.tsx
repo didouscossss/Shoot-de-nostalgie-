@@ -11,9 +11,23 @@ import {
   startBlocking,
   stopBlocking,
 } from "../services/appBlocking";
+import {
+  isProximitySupported,
+  requestProximityPermissions,
+  startBroadcastingPresence,
+  stopBroadcastingPresence,
+  listenForNearbyTokens,
+} from "../services/proximity";
+import { SCROLLING_SOCIAL_APPS } from "../services/socialApps";
 import { startPresenceSession, endPresenceSession } from "../services/presence";
 import type { PresenceSession } from "../models/types";
 import { theme } from "../theme/theme";
+
+// En dessous de ce seuil de RSSI (signal plus faible = appareil plus loin),
+// on considère le proche "trop loin" pour déclencher une Présence — valeur
+// approximative (le RSSI dépend beaucoup du modèle de téléphone et de
+// l'environnement), à ajuster une fois testé sur de vrais appareils.
+const NEARBY_RSSI_THRESHOLD = -80;
 
 type PresenceRoute = RouteProp<RootStackParamList, "Presence">;
 
@@ -33,7 +47,9 @@ export default function PresenceScreen() {
   const [session, setSession] = useState<PresenceSession | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<{ durationSeconds: number; momentsEarned: number } | null>(null);
+  const [searching, setSearching] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const triggeredRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -41,9 +57,55 @@ export default function PresenceScreen() {
     };
   }, []);
 
+  // Recherche automatique du proche à proximité (BLE) : tourne tant qu'on
+  // n'est ni en session, ni sur un résultat, ni en train de choisir les apps.
+  // Le bouton "Démarrer quand même" reste le filet de sécurité si le
+  // Bluetooth n'est pas disponible, la permission refusée, ou que l'autre
+  // personne n'a pas l'app ouverte au même moment.
+  useEffect(() => {
+    if (session || result || appPickerOpen || !user) return;
+    const friendUid = params.participantUids.find((uid) => uid !== user.uid);
+    if (!friendUid || !isProximitySupported()) return;
+
+    let cancelled = false;
+    let cleanupListener: (() => void) | null = null;
+    triggeredRef.current = false;
+
+    (async () => {
+      const granted = await requestProximityPermissions();
+      if (!granted || cancelled) return;
+      setSearching(true);
+      await startBroadcastingPresence(user.uid);
+      if (cancelled) return;
+      cleanupListener = listenForNearbyTokens((token, rssi) => {
+        if (triggeredRef.current) return;
+        if (token === friendUid && rssi >= NEARBY_RSSI_THRESHOLD) {
+          triggeredRef.current = true;
+          handleStart();
+        }
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      setSearching(false);
+      cleanupListener?.();
+      stopBroadcastingPresence();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, result, appPickerOpen, user]);
+
   async function openAppPicker() {
-    const apps = await listInstalledAppsAndroid();
-    setInstalledApps(apps);
+    const installed = await listInstalledAppsAndroid();
+    const installedPackages = new Set(installed.map((a) => a.packageName));
+    // Hors build natif (Expo Go / web), listInstalledAppsAndroid() renvoie
+    // toujours [] : on propose alors le catalogue complet plutôt qu'un écran
+    // vide, pour rester utilisable en démo.
+    const relevant =
+      installedPackages.size > 0
+        ? SCROLLING_SOCIAL_APPS.filter((a) => installedPackages.has(a.packageName))
+        : SCROLLING_SOCIAL_APPS;
+    setInstalledApps(relevant);
     setAppPickerOpen(true);
   }
 
@@ -128,7 +190,8 @@ export default function PresenceScreen() {
   if (appPickerOpen) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Apps à mettre de côté</Text>
+        <Text style={styles.title}>Réseaux à mettre de côté</Text>
+        <Text style={styles.hint}>Seuls les réseaux à défilement infini installés sur ton téléphone sont proposés.</Text>
         <FlatList
           data={installedApps}
           keyExtractor={(a) => a.packageName}
@@ -138,11 +201,6 @@ export default function PresenceScreen() {
               <Text style={styles.appCheck}>{selectedApps.has(item.packageName) ? "✅" : "⬜️"}</Text>
             </TouchableOpacity>
           )}
-          ListEmptyComponent={
-            <Text style={styles.hint}>
-              Liste vide : normal tant que le module natif Android n'est pas compilé sur un vrai appareil.
-            </Text>
-          }
         />
         <TouchableOpacity style={styles.primaryBtn} onPress={saveSelectedApps}>
           <Text style={styles.primaryBtnLabel}>Valider ({selectedApps.size})</Text>
@@ -154,18 +212,29 @@ export default function PresenceScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Présence avec {params.otherName}</Text>
-      <Text style={styles.hint}>
-        {(profile?.distractingApps.length ?? 0) > 0
-          ? `${profile?.distractingApps.length} app(s) seront mises de côté pendant la session.`
-          : "Choisis d'abord les apps distrayantes à mettre de côté."}
-      </Text>
+
+      {searching ? (
+        <>
+          <Text style={styles.searchingEmoji}>🔍</Text>
+          <Text style={styles.hint}>Recherche de {params.otherName} à proximité (Bluetooth)…</Text>
+          <Text style={styles.hintSmall}>La session démarrera automatiquement dès sa détection.</Text>
+        </>
+      ) : (
+        <Text style={styles.hint}>
+          {(profile?.distractingApps.length ?? 0) > 0
+            ? `${profile?.distractingApps.length} réseau(x) seront mis de côté pendant la session.`
+            : "Choisis d'abord les réseaux à mettre de côté."}
+        </Text>
+      )}
 
       <TouchableOpacity style={styles.secondaryBtn} onPress={openAppPicker}>
-        <Text style={styles.secondaryBtnLabel}>📵 Choisir les apps distrayantes</Text>
+        <Text style={styles.secondaryBtnLabel}>📵 Choisir les réseaux à mettre de côté</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.primaryBtn} onPress={handleStart}>
-        <Text style={styles.primaryBtnLabel}>Démarrer la Présence</Text>
+        <Text style={styles.primaryBtnLabel}>
+          {searching ? "Démarrer quand même" : "Démarrer la Présence"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -175,6 +244,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, padding: 24, paddingTop: 80, gap: 16 },
   title: { color: theme.colors.text, fontSize: 20, fontWeight: "700", textAlign: "center" },
   hint: { color: theme.colors.muted, textAlign: "center" },
+  hintSmall: { color: theme.colors.muted, textAlign: "center", fontSize: 12 },
+  searchingEmoji: { fontSize: 40, textAlign: "center" },
   primaryBtn: { backgroundColor: theme.colors.accent, borderRadius: 999, paddingVertical: 16, alignItems: "center" },
   primaryBtnLabel: { color: "#1b1a2e", fontWeight: "800", fontSize: 16 },
   secondaryBtn: { backgroundColor: theme.colors.surface, borderRadius: 999, paddingVertical: 14, alignItems: "center" },
